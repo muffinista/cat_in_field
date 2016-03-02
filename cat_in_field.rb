@@ -2,6 +2,7 @@
 
 require 'rubygems'
 require 'chatterbot/dsl'
+require 'twitter-text'
 
 #
 # this is the script for the twitter bot cat_in_field
@@ -47,7 +48,7 @@ debug_mode
 # chatterbot from updating those values. This directive can also be
 # handy if you are doing something advanced where you want to track
 # which tweet you saw last on your own.
-no_update
+#no_update
 
 # remove this to get less output when running your bot
 verbose
@@ -84,7 +85,7 @@ only_interact_with_followers
 # case, do not use this line. Every time you run your bot, it will
 # execute once, and then exit.
 #
-use_streaming
+#use_streaming
 
 #
 # Here's the fun stuff!
@@ -100,19 +101,19 @@ use_streaming
 # Still here? Hopefully it's because you're going to do something cool
 # with the data that doesn't bother other people. Hooray!
 #
-search "chatterbot" do |tweet|
+#search "chatterbot" do |tweet|
   # here's the content of a tweet
-  puts tweets.text
-end
+#  puts tweet.text
+#end
 
 #
 # this block responds to mentions of your bot
 #
-replies do |tweet|
+#replies do |tweet|
   # Any time you put the #USER# token in a tweet, Chatterbot will
   # replace it with the handle of the user you are interacting with
-  reply "Yes #USER#, you are very kind to say that!", tweet
-end
+#  reply "Yes #USER#, you are very kind to say that!", tweet
+#end
 
 #
 # this block handles incoming Direct Messages. if you want to do
@@ -171,3 +172,134 @@ end
 #
 #end
   
+GRID_W = 10
+GRID_H = 10
+
+MIN_FLOWERS = 4
+MAX_FLOWERS = 10
+
+MIN_ACTORS = 2
+MAX_ACTORS = 4
+
+MIN_FILLER = 1
+MAX_FILLER = 10
+
+ACTOR_TYPES = [:chick, :turtle, :snake, :bug, :beetle, :bee, :spider]
+FLOWER_TYPES = [:sunflower, :rose, :rosette, :blossom]
+FILLER_TYPES = [:shamrock, :rice, :herb]
+
+GRASS = :seedling
+
+EMOJI = {
+  :cat => Twitter::Unicode::U1F408,
+  :seedling => Twitter::Unicode::U1F331,
+  :chick => Twitter::Unicode::U1F425,
+  :turtle => Twitter::Unicode::U1F422,
+  :snake => Twitter::Unicode::U1F40D,
+  :bug => Twitter::Unicode::U1F41B,
+  :beetle => Twitter::Unicode::U1F41E,
+  :bee => Twitter::Unicode::U1F41D,
+  :spider => Twitter::Unicode::U1F578,
+  :sunflower => Twitter::Unicode::U1F33B,
+  :rose => Twitter::Unicode::U1F339,
+  :rosette => Twitter::Unicode::U1F3F5,
+  :blossom => Twitter::Unicode::U1F33C,
+  :shamrock => Twitter::Unicode::U2618,
+  :rice => Twitter::Unicode::U1F33E,
+  :herb => Twitter::Unicode::U1F33F
+}
+
+CAT_STATES = [:napping, :hunting, :playing]
+
+STATE_CHANGE = 0.4
+
+@rng = Random.new
+
+def init_new_grid
+  output = []
+  total = GRID_W * GRID_H
+
+  (MIN_FLOWERS..@rng.rand(MIN_FLOWERS..MAX_FLOWERS)).each { output << FLOWER_TYPES.sample }
+  (MIN_ACTORS..@rng.rand(MIN_ACTORS..MAX_ACTORS)).each { output << ACTOR_TYPES.sample }
+  (MIN_FILLER..@rng.rand(MIN_FILLER..MAX_FILLER)).each { output << FILLER_TYPES.sample }  
+
+  (total-1).downto(output.length).each { output << GRASS }
+
+  output.shuffle
+end
+
+
+def init_cat
+  {
+    x: @rng.rand(0..GRID_W),
+    y: @rng.rand(0..GRID_H),
+    state: CAT_STATES.sample
+  }
+end
+
+def pretty_format(data, cat)
+  base = data.dup
+  cat_pos = (cat[:y]*GRID_H) + cat[:x]
+  puts "PUTTING CAT AT #{cat.inspect} -> #{cat_pos}"
+  base[cat_pos] = :cat
+
+  base.collect { |x| EMOJI[x] }.each_slice(GRID_W).to_a.collect { |l|  l.join(" ") }.join("\n")
+end
+
+def update_actors
+  if @rng.rand <= STATE_CHANGE
+    @cat[:state] = CAT_STATES.sample
+    puts "CAT IS CHANGING to #{@cat[:state]}"
+  else
+    puts "CAT IS #{@cat[:state]}"
+  end
+
+  if @cat[:state] != :napping
+    tmp_x = 0
+    tmp_y = 0
+    while tmp_x == 0 && tmp_y == 0
+      tmp_x = [-1, 0, 1].sample
+      tmp_y = [-1, 0, 1].sample
+    end
+
+    tmp_x = @cat[:x] + tmp_x
+    tmp_y = @cat[:y] + tmp_y
+    
+    if tmp_x < 0
+      tmp_x = GRID_W - 1
+    elsif tmp_x >= GRID_W
+      tmp_x = 0
+    end
+
+    if tmp_y < 0
+      tmp_y = GRID_H - 1
+    elsif tmp_y >= GRID_H
+      tmp_y = 0
+    end
+    
+    @cat[:x] = tmp_x
+    @cat[:y] = tmp_y
+
+    puts @cat.inspect
+  else
+    puts @cat.inspect
+  end
+
+end
+
+@data = bot.config[:map] || init_new_grid
+@cat = bot.config[:cat] || init_cat
+
+while true
+  system("clear")
+
+
+  update_actors
+
+  puts pretty_format(@data, @cat)
+
+  sleep 1
+end
+
+bot.config[:data] = @data
+bot.config[:cat] = @cat
