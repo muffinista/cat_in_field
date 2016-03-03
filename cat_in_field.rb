@@ -29,6 +29,9 @@ CAT_EMOJI = [:cat, :cat_face, :cat_smirk, :cat_pout, :cat_grin, :cat_smile]
 
 GRASS = :seedling
 
+CAT_MOVE_CHANCE = 0.85
+OTHER_MOVE_CHANCE = 0.45
+
 EMOJI = {
   :cat => Twitter::Unicode::U1F408,
   :cat_face => Twitter::Unicode::U1F431,
@@ -112,7 +115,7 @@ def pretty_format(data, actors, cat)
   base.collect { |x| EMOJI[x] }.each_slice(GRID_W).to_a.collect { |l| l.join("") }.join("\n")
 end
 
-def update_actor(a, states=[CAT_STATES])
+def update_actor(a, move_chance=CAT_MOVE_CHANCE, states=[CAT_STATES])
   if @rng.rand <= STATE_CHANGE
     a[:state] = states.sample
     puts "ACTOR IS CHANGING to #{a[:state]}"
@@ -120,7 +123,7 @@ def update_actor(a, states=[CAT_STATES])
     puts "ACTOR IS #{a[:state]}"
   end
 
-  if a[:state] != :napping
+  if a[:state] != :napping && @rng.rand <= move_chance
     tmp_x = 0
     tmp_y = 0
     while tmp_x == 0 && tmp_y == 0
@@ -180,7 +183,7 @@ if ENV['debug']
     system("clear")
     
     @actors = @actors.collect { |a|
-      update_actor(a, NON_CAT_STATES)
+      update_actor(a, OTHER_MOVE_CHANCE, NON_CAT_STATES)
     }
 
     # run cat last. cat is always on top!
@@ -196,7 +199,7 @@ if ENV['debug']
 else
 
   @actors = @actors.collect { |a|
-    update_actor(a, NON_CAT_STATES)
+    update_actor(a, OTHER_MOVE_CHANCE, NON_CAT_STATES)
   }
 
   # run cat last. cat is always on top!
