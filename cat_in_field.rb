@@ -22,7 +22,7 @@ MIN_FILLER = 1
 MAX_FILLER = 10
 
 ACTOR_TYPES = [:chick, :turtle, :snake, :bug, :beetle, :bee, :spider]
-FLOWER_TYPES = [:sunflower, :rose, :rosette, :blossom, :spider_web]
+FLOWER_TYPES = [:sunflower, :rose, :blossom, :spider_web]
 FILLER_TYPES = [:shamrock, :rice, :herb]
 
 CAT_EMOJI = [:cat, :cat_face, :cat_smirk, :cat_pout, :cat_grin, :cat_smile]
@@ -47,7 +47,6 @@ EMOJI = {
   :spider_web => Twitter::Unicode::U1F578,
   :sunflower => Twitter::Unicode::U1F33B,
   :rose => Twitter::Unicode::U1F339,
-  :rosette => Twitter::Unicode::U1F3F5,
   :blossom => Twitter::Unicode::U1F33C,
   :shamrock => Twitter::Unicode::U2618,
   :rice => Twitter::Unicode::U1F33E,
